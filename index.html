@@ -1,287 +1,367 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>work in progress</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZXLPVX Animation</title>
 
 
-<link href="https://fonts.googleapis.com/css2?family=Sixtyfour&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="cross.png">
+
+
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
 
 <style>
-    :root{
-        --dim-green: rgba(0,255,0,0.1);
-        --neon-green: #00ff66;
-        --button-width: 500px;            
-        --button-height: 52px;
-        --button-radius: 12px;            
-        --fade-duration: 800ms;
-    }
 
-    html,body{
-        height:100%;
-        margin:0;
-        padding:0;
-        background:#000;
-        font-family: 'Sixtyfour', monospace;
-        -webkit-font-smoothing:antialiased;
-        -moz-osx-font-smoothing:grayscale;
-    }
+body, body * {
+    user-select: none;           
+    -webkit-user-select: none;   
+    -moz-user-select: none;      
+    -ms-user-select: none;       
+}
 
-    body {
-        display:flex;
-        flex-direction:column;
-        justify-content:flex-start;
-        align-items:center;
-        cursor:pointer;
-        overflow:hidden;
-        user-select:none;
-    }
 
-    .overlay {
-        position:fixed;
-        inset:0;
-        background:#000;
-        color:#0f0;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-size:48px;
-        z-index:50;
-        opacity:1;
-        transition:opacity 0.8s ease;
-    }
-    .overlay.hidden { opacity:0; pointer-events:none; }
+img {
+    -webkit-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
+}
 
-    #mainContent{
-        display:none;
-        width:100%;
-        height:100%;
-        position:relative;
-        flex-direction:column;
-        align-items:center;
-        justify-content:flex-start;
-        pointer-events:none;
-    }
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Jersey 10', sans-serif;
+    background: black;
+}
 
-    #mainImage{
-        margin-top:40px;
-        position:relative;
-        filter: drop-shadow(0 0 8px #00ff00) drop-shadow(0 0 16px #00ff00);
-        z-index:10;
-        -webkit-user-drag:none;
-        user-drag:none;
-    }
 
-    #hazard {
-        position:absolute;
-        top:50%;
-        left:50%;
-        transform:translate(-50%,-50%);
-        opacity:0;
-        z-index:5;
-        pointer-events:none;
-        transition: opacity 0.05s ease;
-        -webkit-user-drag:none;
-    }
+#preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 48px;
+    z-index: 9999;
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+    flex-direction: column;
+}
 
-    .links {
-        width: 100%;
-        max-width: 500px;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        gap: 14px;
-        margin-top: 80px;
-        z-index: 20;
-        pointer-events: auto;
-    }
+#preloader span {
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
 
-    .link-btn {
-        width: var(--button-width);
-        height: var(--button-height);
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        background: var(--dim-green);
-        color: #fff;
-        text-decoration: none;
-        border-radius: var(--button-radius);
-        font-size: 18px;
-        font-weight: 600;
-        box-shadow: 0 3px 0 rgba(0,0,0,0.6);
-        outline: 2px solid transparent;
-        transition: color 160ms linear, transform 160ms ease, box-shadow 260ms ease;
-        -webkit-user-drag:none;
-        user-select:none;
-        opacity:0;
-        transform: translateY(8px);
-        position: relative;
-    }
 
-    .link-btn:hover {
-        color: #000;
-        transform: translateY(0);
-        box-shadow:
-            0 6px 18px rgba(0,0,0,0.6),
-            0 0 10px rgba(0,255,102,0.5);
-        outline-color: rgba(0,0,0,0);
-    }
+#first-screen {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    pointer-events: auto;
+    opacity: 0;
+    transition: filter 0.8s ease, opacity 0.5s ease;
+}
 
-    .link-btn::after{
-        content: "";
-        position: absolute;
-        inset: -6px;
-        border-radius: calc(var(--button-radius) + 6px);
-        pointer-events: none;
-        box-shadow: 0 0 0 rgba(0,0,0,0);
-        opacity: 0;
-        transition: opacity 160ms ease;
-    }
 
-    .link-btn:hover::after{
-        opacity:1;
-        animation: neonPulse 1000ms infinite linear;
-    }
+#bg-slide {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url("background.png") no-repeat center center;
+    background-size: cover;
+    transform: translateY(100%);
+    will-change: transform;
+    z-index: 2;
+}
 
-    @keyframes neonPulse {
-        0%   { box-shadow: 0 0 6px rgba(0,255,102,0.25), 0 0 18px rgba(0,255,102,0.08); }
-        50%  { box-shadow: 0 0 10px rgba(0,255,102,0.5), 0 0 28px rgba(0,255,102,0.18); }
-        100% { box-shadow: 0 0 6px rgba(0,255,102,0.25), 0 0 18px rgba(0,255,102,0.08); }
-    }
 
-    .link-btn.visible {
-        opacity: 1;
-        transform: translateY(0);
-        transition: opacity 700ms ease, transform 500ms cubic-bezier(.22,.9,.2,1);
-    }
+#zxlpvx {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -150%);
+    will-change: transform;
+    z-index: 1;
+}
 
-    
-    .text-btn {
-        background:none;
-        border:none;
-        color: #fff; 
-        font-family: 'Sixtyfour', monospace;
-        font-size: 36px; 
-        font-weight: 600;
-        cursor:pointer;
-        margin-top: 80px; 
-        opacity:0;
-        transform: translateY(8px);
-        transition: color 160ms linear, text-shadow 400ms ease, opacity 700ms ease, transform 500ms cubic-bezier(.22,.9,.2,1);
-    }
-    .text-btn:hover {
-        text-shadow: 0 0 12px rgba(0,255,102,0.7), 0 0 28px rgba(0,255,102,0.4); 
-        color:#00ff66;
-        transform: translateY(0);
-    }
-    .text-btn.visible {
-        opacity:1;
-        transform: translateY(0);
-    }
 
-    @media (max-width:520px){
-        :root{ --button-width: 90%; }
-        .overlay { font-size: 28px; }
-        .link-btn { font-size:16px; height:48px; }
-        .text-btn { font-size: 28px; }
-    }
+.slide-bg {
+    animation: slideUp 3s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+}
+.slide-zxlpvx {
+    animation: slideDown 3s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+}
+
+@keyframes slideUp { 0% { transform: translateY(100%); } 100% { transform: translateY(0); } }
+@keyframes slideDown { 0% { transform: translate(-50%, -150%); } 100% { transform: translate(-50%, -50%); } }
+
+
+#continue {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    color: gray;
+    background: none;
+    border: none;
+    font-size: 48px;
+    padding: 15px 25px;
+    cursor: pointer;
+    z-index: 3;
+    font-family: 'Jersey 10', sans-serif;
+    opacity: 0;
+    transition: opacity 0.3s ease-in, text-shadow 0.3s ease-in;
+}
+
+#continue:hover {
+    text-shadow: 0 0 15px white, 0 0 30px white, 0 0 45px white;
+}
+
+
+#pfp {
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    z-index: 3;
+    transition: top 1s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+
+#links {
+    position: fixed;
+    top: 220px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease-in;
+    font-size: 24px;
+    color: gray;
+    font-family: 'Jersey 10', sans-serif;
+    letter-spacing: 2px;
+}
+
+#links a {
+    color: gray;
+    text-decoration: none;
+    margin: 0 10px;
+    transition: color 0.2s ease;
+    cursor: pointer;
+}
+
+#links a:hover { color: white; }
+
+
+#music-controller {
+    position: fixed;
+    top: 270px; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 600px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 15px;
+    display: none;
+    opacity: 0;
+    flex-direction: column;
+    padding: 10px 20px;
+    z-index: 10;
+    color: white;
+    font-family: 'Jersey 10', sans-serif;
+    transition: opacity 0.5s ease, top 0.5s ease;
+}
+
+#music-top {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+#music-top img {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    margin-right: 15px;
+}
+
+#music-info {
+    display: flex;
+    flex-direction: column;
+}
+
+#music-info .now-playing {
+    color: gray;
+    font-size: 16px;
+}
+
+#music-info #music-title {
+    font-size: 20px;
+}
+
+
+#music-progress {
+    width: 100%;
+    height: 5px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+    position: relative;
+}
+
+#music-progress-inner {
+    width: 0%;
+    height: 100%;
+    background: white;
+    border-radius: 2px;
+    transition: width 0.2s linear;
+}
 </style>
 </head>
 <body>
 
-<div id="initOverlay" class="overlay">Initializing...</div>
-<div id="clickOverlay" class="overlay hidden">Click Anywhere</div>
 
-<div id="mainContent">
-    <img id="mainImage" src="zxlpvx.png" alt="ZXLPVX" draggable="false">
-    <img id="hazard" src="hazard.png" alt="Hazard" draggable="false">
-
-    <div class="links" id="linksContainer" aria-hidden="true">
-        <a role="button" id="btnTelegram" class="link-btn" href="javascript:void(0)">Telegram</a>
-        <a role="button" id="btnSession" class="link-btn" href="javascript:void(0)">Session</a>
-        <a role="button" id="btnDiscord" class="link-btn" href="javascript:void(0)">Discord</a>
-        <a role="button" id="btnMail" class="link-btn" href="javascript:void(0)">Mail</a>
-        <button id="btnSanctum" class="text-btn">Sanctum</button>
-    </div>
-
-    <audio id="beatAudio" src="beat.mp3" loop></audio>
+<div id="preloader">
+    <span id="loading-text">Loading...</span>
+    <span id="click-text" style="opacity:0;">Click anywhere</span>
 </div>
 
+
+<div id="first-screen">
+    <img src="zxlpvx.png" id="zxlpvx" />
+    <div id="bg-slide"></div>
+    <button id="continue">Continue</button>
+</div>
+
+
+<img src="pfp.png" id="pfp" />
+<div id="links">
+    <a href="https://instagram.com/zxlpvx" target="_blank">Instagram</a> |
+    <a href="https://t.me/zxlpvx" target="_blank">Telegram</a> |
+    <a href="https://discord.gg/elyna" target="_blank">Session</a>
+</div>
+
+
+<div id="music-controller">
+    <div id="music-top">
+        <img src="song.png" alt="Song cover">
+        <div id="music-info">
+            <span class="now-playing">K3NT4!</span>
+            <span id="music-title">i can't let you go</span>
+        </div>
+    </div>
+    <div id="music-progress">
+        <div id="music-progress-inner"></div>
+    </div>
+</div>
+
+<audio id="music" src="music.mp3" preload="auto"></audio>
+
 <script>
-const initOverlay = document.getElementById('initOverlay');
-const clickOverlay = document.getElementById('clickOverlay');
-const mainContent = document.getElementById('mainContent');
+const preloader = document.getElementById('preloader');
+const loadingText = document.getElementById('loading-text');
+const clickText = document.getElementById('click-text');
+const firstScreen = document.getElementById('first-screen');
+const btn = document.getElementById('continue');
+const pfp = document.getElementById('pfp');
+const bg = document.getElementById('bg-slide');
+const zxlpvx = document.getElementById('zxlpvx');
+const links = document.getElementById('links');
+const musicCtrl = document.getElementById('music-controller');
+const music = document.getElementById('music');
+const progressInner = document.getElementById('music-progress-inner');
 
-mainContent.addEventListener('contextmenu', e => e.preventDefault());
+music.volume = 0.3; 
 
-const imagesToLoad = ['zxlpvx.png','hazard.png'];
-const audioToLoad = ['beat.mp3'];
-const fontsToLoad = ['Sixtyfour'];
 
-function preloadImages(urls){return Promise.all(urls.map(url=>new Promise(res=>{const img=new Image();img.src=url;img.onload=res;img.onerror=res;})));}
-function preloadAudio(urls){return Promise.all(urls.map(url=>new Promise(res=>{const a=new Audio();a.src=url;a.oncanplaythrough=res;a.onerror=res;})));}
-function preloadFonts(names){return Promise.all(names.map(name=>{const font=new FontFace(name,`url(https://fonts.googleapis.com/css2?family=${name.replace(/ /g,'+')}&display=swap)`);return font.load().then(f=>document.fonts.add(f)).catch(()=>{});}))}
+const assets = ["background.png","zxlpvx.png","pfp.png"];
+let loaded = 0;
 
-Promise.all([preloadImages(imagesToLoad),preloadAudio(audioToLoad),preloadFonts(fontsToLoad)]).then(()=>{
-    initOverlay.classList.add('hidden');
-    setTimeout(()=>clickOverlay.classList.remove('hidden'),800);
-});
+function assetLoaded() {
+    loaded++;
+    if(loaded === assets.length) {
+        loadingText.style.opacity = 0;
+        setTimeout(() => { clickText.style.opacity = 1; }, 500);
 
-clickOverlay.addEventListener('click',()=>{
-    clickOverlay.classList.add('hidden');
-    mainContent.style.display='flex';
-    const linksContainer=document.getElementById('linksContainer');
-    linksContainer.setAttribute('aria-hidden','false');
-
-    const audio=document.getElementById('beatAudio');
-    audio.play();
-
-    const btns=[
-        document.getElementById('btnTelegram'),
-        document.getElementById('btnSession'),
-        document.getElementById('btnDiscord'),
-        document.getElementById('btnMail'),
-        document.getElementById('btnSanctum')
-    ];
-    btns.forEach((b,i)=>{b.style.pointerEvents='auto';setTimeout(()=>b.classList.add('visible'),200*i);});
-
-    const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    const audioSource=audioCtx.createMediaElementSource(audio);
-    const analyser=audioCtx.createAnalyser();
-
-    audioSource.connect(analyser);
-    analyser.connect(audioCtx.destination);
-
-    analyser.fftSize=256;
-    const dataArray=new Uint8Array(analyser.frequencyBinCount);
-    const hazard=document.getElementById('hazard');
-    const minBin=0,maxBin=10,bassThreshold=221;
-    let hazardVisible=false;
-
-    function detectBassHit(){
-        analyser.getByteFrequencyData(dataArray);
-        let maxBass=0;
-        for(let i=minBin;i<=maxBin;i++){if(dataArray[i]>maxBass)maxBass=dataArray[i];}
-        if(maxBass>bassThreshold){if(!hazardVisible){hazardVisible=true;hazard.style.opacity=0.03;}}
-        else{if(hazardVisible){hazardVisible=false;hazard.style.opacity=0;}}
-        requestAnimationFrame(detectBassHit);
+        preloader.addEventListener('click', () => {
+            preloader.style.opacity = 0;
+            setTimeout(() => {
+                preloader.style.display = "none";
+                firstScreen.style.opacity = 1;
+                music.play().catch(e => console.log("Audio play prevented:", e));
+                bg.classList.add("slide-bg");
+                zxlpvx.classList.add("slide-zxlpvx");
+            }, 500);
+        }, { once: true });
     }
+}
 
-    audioCtx.resume().then(()=>detectBassHit());
+assets.forEach(src => {
+    const img = new Image();
+    img.src = src;
+    img.onload = assetLoaded;
 });
 
-document.getElementById('btnTelegram').addEventListener('click',()=>{location.href='https://t.me/zxlpvx';});
-document.getElementById('btnDiscord').addEventListener('click',()=>{location.href='https://discord.gg/zxlpvx';});
-document.getElementById('btnMail').addEventListener('click',()=>{location.href='https://mail.google.com/mail/?view=cm&fs=1&to=zxlpvx@proton.me';});
-document.getElementById('btnSession').addEventListener('click',async()=>{
-    const toCopy='3456ty43wsgy54ed';
-    try{await navigator.clipboard.writeText(toCopy);const btn=document.getElementById('btnSession');const oldText=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=oldText,900);}
-    catch(e){const ta=document.createElement('textarea');ta.value=toCopy;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(_){ }document.body.removeChild(ta);}
-});
-document.getElementById('btnSanctum').addEventListener('click',()=>{location.href='https://zxlpvx.wtf/sanctum';});
+bg.addEventListener('animationend', () => { btn.style.opacity = 1; });
 
-document.addEventListener('dragstart',e=>e.preventDefault());
+btn.addEventListener('click', () => {
+    btn.style.opacity = 0;
+    firstScreen.style.filter = "blur(10px)";
+    pfp.style.top = "50px";
+    setTimeout(() => {
+        links.style.opacity = 1;
+        links.style.pointerEvents = "auto";
+
+
+        musicCtrl.style.display = "flex";
+        setTimeout(() => { musicCtrl.style.opacity = 1; }, 50);
+    }, 1000);
+
+
+    let targetVolume = 0.8;
+    let duration = 2000;
+    let steps = 40;
+    let step = 0;
+    let increment = (targetVolume - music.volume) / steps;
+    const fadeInterval = setInterval(() => {
+        if(step >= steps) {
+            music.volume = targetVolume;
+            clearInterval(fadeInterval);
+        } else {
+            music.volume += increment;
+            step++;
+        }
+    }, duration/steps);
+});
+
+
+music.addEventListener('timeupdate', () => {
+    const progressPercent = (music.currentTime / music.duration) * 100;
+    progressInner.style.width = progressPercent + '%';
+});
+
+
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+
+document.addEventListener('dragstart', e => e.preventDefault());
 </script>
 </body>
 </html>
