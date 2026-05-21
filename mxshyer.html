@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mxshyer · Maison de Fleur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --text-primary: #2a1a2e;
+  --text-secondary: #5a4a60;
+  --text-muted: #9a78b0;
+  --pink: #b85c8a;
+  --border: rgba(210,180,220,0.45);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text-primary);
+  overflow-x: hidden;
+  min-height: 100vh;
+  transition: background-color 1s ease;
+  background-color: #fdf8fc;
+}
+
+/* ── background blobs ── */
+.page-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.bg-blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(90px); opacity: 0.42;
+  animation: blobDrift ease-in-out infinite alternate;
+  transition: background 1.2s ease;
+}
+@keyframes blobDrift {
+  0%   { transform: translate(0,0) scale(1); }
+  100% { transform: translate(30px,20px) scale(1.08); }
+}
+
+/* ── SVG botanical layer ── */
+.botanical-layer {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.botanical-layer svg { position: absolute; }
+
+/* ── scattered petals canvas ── */
+#petalCanvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+
+/* ── theme flash overlay ── */
+.theme-flash {
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  opacity: 0; transition: opacity 0.5s ease;
+}
+.theme-flash.active { opacity: 1; }
+
+/* ── hero ── */
+.hero {
+  position: relative; padding: 90px 40px 80px;
+  text-align: center; overflow: visible; z-index: 2;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg,#fdf6f0 0%,#fce8f3 40%,#e8f0fd 100%);
+  opacity: 0.55; pointer-events: none; transition: opacity 1s ease;
+}
+
+/* corner botanical decorations */
+.hero-corner {
+  position: absolute; pointer-events: none; z-index: 3;
+  transition: opacity 1s ease;
+}
+.hero-corner.tl { top: -10px; left: -10px; }
+.hero-corner.tr { top: -10px; right: -10px; transform: scaleX(-1); }
+.hero-corner.bl { bottom: -10px; left: -10px; transform: scaleY(-1); }
+.hero-corner.br { bottom: -10px; right: -10px; transform: scale(-1); }
+
+.hero-petals { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+.petal {
+  position: absolute; border-radius: 50% 0 50% 0; opacity: 0;
+  animation: floatPetal linear infinite; transition: background 1s ease;
+}
+@keyframes floatPetal {
+  0%   { opacity:0; transform:translateY(0) rotate(0deg); }
+  10%  { opacity:0.75; }
+  90%  { opacity:0.5; }
+  100% { opacity:0; transform:translateY(-720px) rotate(400deg); }
+}
+
+.hero-eyebrow {
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #c084a8; margin-bottom: 14px; position: relative; z-index: 4;
+  transition: color 1s ease;
+}
+.hero-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(42px, 8vw, 66px); font-weight: 300;
+  line-height: 1.05; color: var(--text-primary);
+  position: relative; z-index: 4; margin-bottom: 8px;
+}
+.hero-name em { font-style: italic; color: var(--pink); transition: color 1s ease; }
+.hero-subtitle {
+  font-size: 13px; font-weight: 300; color: #7a6580;
+  letter-spacing: 0.06em; position: relative; z-index: 4; margin-bottom: 6px;
+}
+.hero-pills {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; position: relative; z-index: 4; margin: 24px 0 40px;
+}
+.pill {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid rgba(200,160,200,0.4); border-radius: 999px;
+  padding: 6px 18px; font-size: 12px; color: #6a4570;
+}
+.scroll-hint {
+  position: relative; z-index: 4; font-size: 11px; color: #b8a0c0;
+  letter-spacing: 0.1em; display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.scroll-line { width: 40px; height: 0.5px; background: #d4b8d8; transition: background 1s ease; }
+
+/* ── floating flower accents ── */
+.float-bloom {
+  position: absolute; pointer-events: none; z-index: 3;
+  animation: floatBloom ease-in-out infinite alternate;
+}
+@keyframes floatBloom {
+  0%   { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-14px) rotate(8deg); }
+}
+
+/* ── marquee ── */
+.marquee-wrap {
+  overflow: hidden; padding: 0; position: relative; z-index: 2;
+  border-top: 0.5px solid rgba(200,170,220,0.3);
+  border-bottom: 0.5px solid rgba(200,170,220,0.3);
+}
+.marquee-inner { display: flex; overflow: hidden; }
+.marquee-track {
+  display: flex; gap: 0; white-space: nowrap; width: max-content;
+  animation: marqueeScroll 22s linear infinite;
+}
+.marquee-item {
+  font-size: 12px; color: #c084a8; letter-spacing: 0.18em;
+  text-transform: uppercase; font-weight: 300;
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 20px; transition: color 1s ease;
+}
+.marquee-dot { width:4px; height:4px; border-radius:50%; background:#d4b0d8; flex-shrink:0; transition: background 1s ease; }
+.marquee-flower { font-size: 14px; animation: spinFlower 4s linear infinite; display: inline-block; }
+@keyframes spinFlower { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+@keyframes marqueeScroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+/* ── sections ── */
+.section { padding: 56px 40px; max-width: 720px; margin: 0 auto; position: relative; z-index: 2; }
+.section-label {
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: #c084a8; margin-bottom: 8px; transition: color 1s ease;
+}
+.section-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(26px, 5vw, 34px); font-weight: 300;
+  color: var(--text-primary); margin-bottom: 20px; line-height: 1.2;
+}
+.section-heading em { font-style: italic; color: var(--pink); transition: color 1s ease; }
+.section-body { font-size: 14px; font-weight: 300; line-height: 1.9; color: var(--text-secondary); }
+
+/* ── divider with flower ── */
+.divider {
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 40px; max-width: 720px; margin: 0 auto 8px; position: relative; z-index: 2;
+}
+.divider-line { flex:1; height:0.5px; background: rgba(200,170,220,0.35); transition: background 1s ease; }
+.divider-floral {
+  display: flex; align-items: center; gap: 8px;
+}
+.divider-petal { font-size: 16px; animation: petalSpin 6s ease-in-out infinite alternate; }
+@keyframes petalSpin {
+  0%   { transform: rotate(-15deg) scale(1); }
+  100% { transform: rotate(15deg) scale(1.1); }
+}
+
+/* ── about grid ── */
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+.about-card {
+  padding: 20px; border-radius: 16px;
+  background: rgba(255,255,255,0.6); border: 0.5px solid var(--border);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.about-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(180,120,200,0.12); }
+.about-card-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg,#f9d5e9,#e8d5f9);
+  display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 10px;
+}
+.about-card-label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #b07ab8; margin-bottom: 4px; transition: color 1s ease; }
+.about-card-value { font-size: 13px; color: #3a2a40; line-height: 1.6; }
+
+/* ── section flower deco ── */
+.section-deco {
+  position: absolute; right: 30px; top: 40px; pointer-events: none; z-index: 1;
+  opacity: 0.18; transition: opacity 1s ease;
+}
+
+/* ── shop ── */
+.shop-intro { font-size: 13px; color: var(--text-secondary); font-weight: 300; line-height: 1.9; margin-bottom: 28px; }
+
+.flower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+.flower-card {
+  border-radius: 20px; overflow: hidden;
+  background: rgba(255,255,255,0.65); border: 0.5px solid var(--border);
+  cursor: pointer; position: relative;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.5s ease;
+}
+.flower-card:hover { transform: translateY(-7px) scale(1.02); box-shadow: 0 22px 64px rgba(180,120,200,0.2); }
+.flower-card.active-theme { border-color: rgba(255,255,255,0.9) !important; box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 16px 48px rgba(0,0,0,0.1); }
+.flower-card:hover .flower-overlay { opacity: 1; }
+.flower-card:hover .flower-img-wrap img { transform: scale(1.07); }
+
+.flower-img-wrap { height: 220px; overflow: hidden; position: relative; }
+.flower-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; display: block; }
+.flower-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(60,10,70,0.55) 0%, transparent 55%);
+  opacity: 0; transition: opacity 0.35s ease;
+  display: flex; align-items: flex-end; padding: 14px;
+}
+.flower-overlay-text { color: #fff; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; }
+
+.flower-info { padding: 14px 16px 16px; }
+.flower-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 400; color: var(--text-primary); margin-bottom: 4px; }
+.flower-desc { font-size: 11px; color: var(--text-muted); font-weight: 300; line-height: 1.6; }
+.flower-tag {
+  display: inline-block; margin-top: 8px;
+  background: linear-gradient(135deg,#fce4f3,#ede4fc);
+  border-radius: 999px; padding: 3px 12px;
+  font-size: 10px; color: #8a45a0; letter-spacing: 0.08em; text-transform: uppercase;
+  transition: background 1s ease, color 1s ease;
+}
+
+.flower-card-wide {
+  display: flex; align-items: center; margin-bottom: 28px;
+  border-radius: 20px; overflow: hidden;
+  background: rgba(255,255,255,0.65); border: 0.5px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.5s ease;
+}
+.flower-card-wide:hover { transform: translateY(-5px); box-shadow: 0 20px 60px rgba(180,120,200,0.18); }
+.flower-card-wide.active-theme { border-color: rgba(255,255,255,0.9) !important; box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 16px 48px rgba(0,0,0,0.1); }
+.flower-card-wide:hover .flower-overlay { opacity: 1; }
+.flower-card-wide:hover img { transform: scale(1.06); }
+.flower-card-wide .flower-img-wrap { height: 190px; width: 48%; flex-shrink: 0; }
+
+/* shop cta */
+.shop-cta {
+  padding: 26px 28px; border-radius: 20px;
+  background: linear-gradient(135deg,rgba(252,220,242,0.7),rgba(230,220,255,0.7));
+  border: 0.5px solid rgba(210,180,230,0.55);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  text-decoration: none; margin-top: 4px; transition: background 1s ease;
+  position: relative; overflow: hidden;
+}
+.shop-cta-blooms {
+  position: absolute; right: 100px; top: 50%; transform: translateY(-50%);
+  font-size: 28px; opacity: 0.15; pointer-events: none;
+  animation: ctaBlooms 4s ease-in-out infinite alternate;
+}
+@keyframes ctaBlooms { 0%{transform:translateY(-50%) rotate(-10deg)} 100%{transform:translateY(-50%) rotate(10deg)} }
+.shop-cta-sub { font-size: 12px; color: #7a4888; font-weight: 300; }
+.shop-cta-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #2a1030; font-weight: 400; }
+.shop-btn {
+  background: #2a1030; color: #f5e8fc; border: none; border-radius: 999px;
+  padding: 11px 22px; font-size: 12px; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; white-space: nowrap;
+  transition: background 0.2s, transform 0.2s; text-decoration: none; display: inline-block; position: relative; z-index: 2;
+}
+.shop-btn:hover { background: #4a2060; transform: scale(1.04); }
+
+/* ── contact ── */
+.contact-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 24px; }
+.contact-card {
+  flex: 1; min-width: 180px; padding: 22px; border-radius: 18px;
+  background: rgba(255,255,255,0.6); border: 0.5px solid var(--border);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  text-decoration: none; transition: transform 0.3s ease, box-shadow 0.3s ease; display: block;
+}
+.contact-card:hover { transform: translateY(-5px); box-shadow: 0 18px 50px rgba(160,100,200,0.16); }
+.contact-card-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg,#f5d5f0,#d5d5f8);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 12px;
+}
+.contact-card-title { font-size: 13px; font-weight: 500; color: #3a2a45; margin-bottom: 3px; }
+.contact-card-handle { font-size: 12px; color: var(--text-muted); font-weight: 300; }
+
+/* ── footer ── */
+.footer {
+  padding: 40px 40px 30px; text-align: center; font-size: 11px; color: #c0a8cc;
+  letter-spacing: 0.1em; font-weight: 300;
+  border-top: 0.5px solid rgba(200,170,220,0.3);
+  position: relative; z-index: 2; overflow: hidden;
+}
+.footer-blooms {
+  display: flex; justify-content: center; gap: 16px; margin-bottom: 20px; font-size: 20px;
+}
+.footer-bloom { animation: footerFloat ease-in-out infinite alternate; }
+@keyframes footerFloat { 0%{transform:translateY(0) rotate(-5deg)} 100%{transform:translateY(-6px) rotate(5deg)} }
+
+/* ── fade up ── */
+.fade-up { opacity: 0; transform: translateY(26px); transition: opacity 0.75s ease, transform 0.75s ease; }
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+
+/* ── theme badge ── */
+.theme-badge {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(200,170,220,0.5); border-radius: 999px;
+  padding: 8px 20px; font-size: 11px; color: #6a4570; letter-spacing: 0.12em; text-transform: uppercase;
+  opacity: 0; transition: opacity 0.5s ease, transform 0.5s ease; pointer-events: none;
+  z-index: 100; white-space: nowrap;
+}
+.theme-badge.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── vine border top ── */
+.vine-border {
+  width: 100%; height: 60px; position: relative; z-index: 2;
+  overflow: hidden; pointer-events: none;
+}
+
+/* ── sparkle ── */
+.sparkle {
+  position: fixed; pointer-events: none; z-index: 8; font-size: 18px;
+  animation: sparklePop 1s ease forwards;
+}
+@keyframes sparklePop {
+  0%   { opacity:1; transform: scale(0) rotate(0deg); }
+  50%  { opacity:1; transform: scale(1.4) rotate(180deg); }
+  100% { opacity:0; transform: scale(0.5) translateY(-40px) rotate(360deg); }
+}
+
+/* ── mobile ── */
+@media (max-width: 520px) {
+  .hero { padding: 70px 24px 50px; }
+  .section { padding: 44px 24px; }
+  .divider { padding: 0 24px; }
+  .about-grid { grid-template-columns: 1fr; }
+  .flower-grid { grid-template-columns: 1fr; }
+  .flower-card-wide { flex-direction: column; }
+  .flower-card-wide .flower-img-wrap { width: 100%; height: 220px; }
+  .shop-cta { flex-direction: column; align-items: flex-start; }
+  .contact-row { flex-direction: column; }
+  .hero-corner { display: none; }
+  .section-deco { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-bg">
+  <div class="bg-blob" id="blob1" style="width:420px;height:420px;background:#f5c8e8;top:-100px;left:-120px;animation-duration:8s;"></div>
+  <div class="bg-blob" id="blob2" style="width:340px;height:340px;background:#ccc8f8;top:250px;right:-100px;animation-duration:11s;animation-delay:2s;"></div>
+  <div class="bg-blob" id="blob3" style="width:300px;height:300px;background:#fde8c4;bottom:120px;left:40px;animation-duration:9s;animation-delay:1s;"></div>
+</div>
+
+<!-- botanical SVG layer -->
+<div class="botanical-layer" id="botanicalLayer"></div>
+
+<canvas id="petalCanvas"></canvas>
+<div class="theme-flash" id="themeFlash"></div>
+<div class="theme-badge" id="themeBadge"></div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-petals" id="petals"></div>
+
+  <!-- corner botanical SVGs -->
+  <div class="hero-corner tl">
+    <svg width="130" height="130" viewBox="0 0 130 130" fill="none" xmlns="http://www.w3.org/2000/svg" id="cornerTL">
+      <g opacity="0.55">
+        <!-- stem -->
+        <path d="M10 120 Q 30 80 60 60 Q 80 40 90 10" stroke="#d4a0c8" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <!-- leaves -->
+        <path d="M40 88 Q 55 72 50 58 Q 35 70 40 88Z" fill="#c8e6c0" opacity="0.7"/>
+        <path d="M60 65 Q 78 55 76 42 Q 60 50 60 65Z" fill="#b8ddb0" opacity="0.7"/>
+        <!-- small flowers -->
+        <circle cx="90" cy="10" r="5" fill="#f9b8d8" opacity="0.8"/>
+        <circle cx="88" cy="10" r="2" fill="#fff" opacity="0.9"/>
+        <circle cx="92" cy="8" r="3" fill="#f0a0d0" opacity="0.7"/>
+        <circle cx="95" cy="13" r="3.5" fill="#f9b8d8" opacity="0.6"/>
+        <!-- buds -->
+        <ellipse cx="62" cy="56" rx="4" ry="6" fill="#f4c0dc" opacity="0.65" transform="rotate(-30 62 56)"/>
+        <ellipse cx="42" cy="83" rx="3.5" ry="5" fill="#f4c0dc" opacity="0.6" transform="rotate(20 42 83)"/>
+      </g>
+    </svg>
+  </div>
+  <div class="hero-corner tr">
+    <svg width="130" height="130" viewBox="0 0 130 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g opacity="0.55">
+        <path d="M10 120 Q 30 80 60 60 Q 80 40 90 10" stroke="#d4a0c8" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <path d="M40 88 Q 55 72 50 58 Q 35 70 40 88Z" fill="#c8e6c0" opacity="0.7"/>
+        <path d="M60 65 Q 78 55 76 42 Q 60 50 60 65Z" fill="#b8ddb0" opacity="0.7"/>
+        <circle cx="90" cy="10" r="5" fill="#f9b8d8" opacity="0.8"/>
+        <circle cx="88" cy="10" r="2" fill="#fff" opacity="0.9"/>
+        <circle cx="92" cy="8" r="3" fill="#f0a0d0" opacity="0.7"/>
+        <circle cx="95" cy="13" r="3.5" fill="#f9b8d8" opacity="0.6"/>
+        <ellipse cx="62" cy="56" rx="4" ry="6" fill="#f4c0dc" opacity="0.65" transform="rotate(-30 62 56)"/>
+        <ellipse cx="42" cy="83" rx="3.5" ry="5" fill="#f4c0dc" opacity="0.6" transform="rotate(20 42 83)"/>
+      </g>
+    </svg>
+  </div>
+  <div class="hero-corner bl">
+    <svg width="130" height="130" viewBox="0 0 130 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g opacity="0.4">
+        <path d="M10 10 Q 30 50 60 70 Q 80 90 90 120" stroke="#d4a0c8" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <path d="M40 42 Q 55 58 50 72 Q 35 60 40 42Z" fill="#c8e6c0" opacity="0.7"/>
+        <circle cx="90" cy="120" r="5" fill="#fde68a" opacity="0.8"/>
+        <circle cx="94" cy="116" r="3.5" fill="#fbbf24" opacity="0.7"/>
+        <ellipse cx="62" cy="74" rx="4" ry="6" fill="#f4c0dc" opacity="0.55" transform="rotate(30 62 74)"/>
+      </g>
+    </svg>
+  </div>
+  <div class="hero-corner br">
+    <svg width="130" height="130" viewBox="0 0 130 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g opacity="0.4">
+        <path d="M10 10 Q 30 50 60 70 Q 80 90 90 120" stroke="#d4a0c8" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <path d="M40 42 Q 55 58 50 72 Q 35 60 40 42Z" fill="#c8e6c0" opacity="0.7"/>
+        <circle cx="90" cy="120" r="5" fill="#fde68a" opacity="0.8"/>
+        <circle cx="94" cy="116" r="3.5" fill="#fbbf24" opacity="0.7"/>
+        <ellipse cx="62" cy="74" rx="4" ry="6" fill="#f4c0dc" opacity="0.55" transform="rotate(30 62 74)"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- floating blooms in hero -->
+  <div class="float-bloom" style="left:8%;top:30%;animation-duration:3.5s;animation-delay:0s;">
+    <svg width="38" height="38" viewBox="0 0 38 38"><g opacity="0.55">
+      <ellipse cx="19" cy="10" rx="5" ry="9" fill="#f9a8d4"/>
+      <ellipse cx="19" cy="10" rx="5" ry="9" fill="#f9a8d4" transform="rotate(45 19 19)"/>
+      <ellipse cx="19" cy="10" rx="5" ry="9" fill="#f9a8d4" transform="rotate(90 19 19)"/>
+      <ellipse cx="19" cy="10" rx="5" ry="9" fill="#f9a8d4" transform="rotate(135 19 19)"/>
+      <circle cx="19" cy="19" r="5" fill="#fde68a"/>
+    </g></svg>
+  </div>
+  <div class="float-bloom" style="right:9%;top:25%;animation-duration:4.2s;animation-delay:1s;">
+    <svg width="32" height="32" viewBox="0 0 32 32"><g opacity="0.45">
+      <ellipse cx="16" cy="7" rx="4" ry="7" fill="#c4b5fd"/>
+      <ellipse cx="16" cy="7" rx="4" ry="7" fill="#c4b5fd" transform="rotate(60 16 16)"/>
+      <ellipse cx="16" cy="7" rx="4" ry="7" fill="#c4b5fd" transform="rotate(120 16 16)"/>
+      <ellipse cx="16" cy="7" rx="4" ry="7" fill="#c4b5fd" transform="rotate(180 16 16)"/>
+      <ellipse cx="16" cy="7" rx="4" ry="7" fill="#c4b5fd" transform="rotate(240 16 16)"/>
+      <ellipse cx="16" cy="7" rx="4" ry="7" fill="#c4b5fd" transform="rotate(300 16 16)"/>
+      <circle cx="16" cy="16" r="4" fill="#f9a8d4"/>
+    </g></svg>
+  </div>
+  <div class="float-bloom" style="left:15%;bottom:18%;animation-duration:5s;animation-delay:0.5s;">
+    <svg width="28" height="28" viewBox="0 0 28 28"><g opacity="0.4">
+      <ellipse cx="14" cy="6" rx="3.5" ry="7" fill="#86efac"/>
+      <ellipse cx="14" cy="6" rx="3.5" ry="7" fill="#86efac" transform="rotate(72 14 14)"/>
+      <ellipse cx="14" cy="6" rx="3.5" ry="7" fill="#86efac" transform="rotate(144 14 14)"/>
+      <ellipse cx="14" cy="6" rx="3.5" ry="7" fill="#86efac" transform="rotate(216 14 14)"/>
+      <ellipse cx="14" cy="6" rx="3.5" ry="7" fill="#86efac" transform="rotate(288 14 14)"/>
+      <circle cx="14" cy="14" r="4" fill="#fde68a"/>
+    </g></svg>
+  </div>
+  <div class="float-bloom" style="right:14%;bottom:22%;animation-duration:3.8s;animation-delay:2s;">
+    <svg width="24" height="24" viewBox="0 0 24 24"><g opacity="0.4">
+      <ellipse cx="12" cy="4" rx="3" ry="6" fill="#fdba74"/>
+      <ellipse cx="12" cy="4" rx="3" ry="6" fill="#fdba74" transform="rotate(90 12 12)"/>
+      <ellipse cx="12" cy="4" rx="3" ry="6" fill="#fdba74" transform="rotate(45 12 12)"/>
+      <ellipse cx="12" cy="4" rx="3" ry="6" fill="#fdba74" transform="rotate(135 12 12)"/>
+      <circle cx="12" cy="12" r="3.5" fill="#f9a8d4"/>
+    </g></svg>
+  </div>
+
+  <p class="hero-eyebrow">✦ creative &nbsp;·&nbsp; handcrafted &nbsp;·&nbsp; maldives ✦</p>
+  <h1 class="hero-name">Hello, I'm <em id="heroEm">Mxshyer</em></h1>
+  <p class="hero-subtitle">Psychology student &nbsp;·&nbsp; pipe flower artist &nbsp;·&nbsp; 18</p>
+  <p class="hero-subtitle">Vaavu Felidhoo, Maldives</p>
+  <div class="hero-pills">
+    <span class="pill">🌻 handmade flowers</span>
+    <span class="pill">🧠 studying psychology</span>
+    <span class="pill">🌸 maison de fleur</span>
+    <span class="pill">🇲🇻 felidhoo</span>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    <span>scroll to explore</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-inner">
+    <div class="marquee-track" id="mtrack"></div>
+  </div>
+</div>
+
+<!-- vine divider -->
+<div class="vine-border">
+  <svg width="100%" height="60" viewBox="0 0 800 60" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 30 Q100 10 200 30 Q300 50 400 30 Q500 10 600 30 Q700 50 800 30" stroke="rgba(196,160,210,0.3)" stroke-width="1" fill="none"/>
+    <path d="M0 35 Q100 15 200 35 Q300 55 400 35 Q500 15 600 35 Q700 55 800 35" stroke="rgba(196,160,210,0.18)" stroke-width="0.8" fill="none"/>
+    <!-- leaves along vine -->
+    <ellipse cx="100" cy="20" rx="8" ry="4" fill="rgba(160,210,150,0.35)" transform="rotate(-20 100 20)"/>
+    <ellipse cx="200" cy="30" rx="6" ry="3" fill="rgba(160,210,150,0.3)" transform="rotate(15 200 30)"/>
+    <ellipse cx="300" cy="22" rx="7" ry="3.5" fill="rgba(160,210,150,0.35)" transform="rotate(-25 300 22)"/>
+    <ellipse cx="400" cy="30" rx="8" ry="4" fill="rgba(160,210,150,0.3)" transform="rotate(10 400 30)"/>
+    <ellipse cx="500" cy="20" rx="6" ry="3" fill="rgba(160,210,150,0.3)" transform="rotate(-15 500 20)"/>
+    <ellipse cx="600" cy="30" rx="7" ry="3.5" fill="rgba(160,210,150,0.35)" transform="rotate(20 600 30)"/>
+    <ellipse cx="700" cy="22" rx="6" ry="3" fill="rgba(160,210,150,0.3)" transform="rotate(-10 700 22)"/>
+    <!-- tiny dots/berries -->
+    <circle cx="150" cy="16" r="2.5" fill="rgba(249,168,212,0.5)"/>
+    <circle cx="250" cy="36" r="2" fill="rgba(196,181,253,0.5)"/>
+    <circle cx="350" cy="18" r="2.5" fill="rgba(249,168,212,0.4)"/>
+    <circle cx="450" cy="34" r="2" fill="rgba(253,186,116,0.5)"/>
+    <circle cx="550" cy="16" r="2.5" fill="rgba(196,181,253,0.4)"/>
+    <circle cx="650" cy="34" r="2" fill="rgba(249,168,212,0.5)"/>
+    <circle cx="750" cy="18" r="2.5" fill="rgba(253,186,116,0.4)"/>
+  </svg>
+</div>
+
+<!-- ABOUT -->
+<section class="section fade-up" style="position:relative;">
+  <!-- large bg flower watermark -->
+  <div class="section-deco">
+    <svg width="200" height="200" viewBox="0 0 200 200" fill="none">
+      <g opacity="1">
+        <ellipse cx="100" cy="40" rx="22" ry="44" fill="#f9b8d8"/>
+        <ellipse cx="100" cy="40" rx="22" ry="44" fill="#f9b8d8" transform="rotate(45 100 100)"/>
+        <ellipse cx="100" cy="40" rx="22" ry="44" fill="#f0a8cc" transform="rotate(90 100 100)"/>
+        <ellipse cx="100" cy="40" rx="22" ry="44" fill="#f9b8d8" transform="rotate(135 100 100)"/>
+        <ellipse cx="100" cy="40" rx="22" ry="44" fill="#f0a8cc" transform="rotate(180 100 100)"/>
+        <ellipse cx="100" cy="40" rx="22" ry="44" fill="#f9b8d8" transform="rotate(225 100 100)"/>
+        <ellipse cx="100" cy="40" rx="22" ry="44" fill="#f0a8cc" transform="rotate(270 100 100)"/>
+        <ellipse cx="100" cy="40" rx="22" ry="44" fill="#f9b8d8" transform="rotate(315 100 100)"/>
+        <circle cx="100" cy="100" r="24" fill="#fde68a"/>
+        <circle cx="100" cy="100" r="14" fill="#fbbf24"/>
+      </g>
+    </svg>
+  </div>
+  <p class="section-label">about me</p>
+  <h2 class="section-heading">A girl who makes<br><em>flowers that never fade.</em></h2>
+  <p class="section-body">
+    Recently turned 18 and freshly done with O'Levels at Vaavu Felidhoo Education Center.
+    I'm currently studying psychology — fascinated by the way the mind works.
+    Alongside my studies I pour my creativity into <strong style="font-weight:500;">Maison de Fleur</strong>,
+    my small business where I craft beautiful flowers from pipe cleaners that last forever.
+  </p>
+  <div class="about-grid">
+    <div class="about-card"><div class="about-card-icon">🎓</div><div class="about-card-label">Education</div><div class="about-card-value">O'Levels graduate<br>Vaavu Felidhoo Education Center</div></div>
+    <div class="about-card"><div class="about-card-icon">🧠</div><div class="about-card-label">Currently studying</div><div class="about-card-value">Psychology<br>understanding the human mind</div></div>
+    <div class="about-card"><div class="about-card-icon">🌺</div><div class="about-card-label">Craft</div><div class="about-card-value">Pipe cleaner floral art & bouquets</div></div>
+    <div class="about-card"><div class="about-card-icon">🌊</div><div class="about-card-label">Based in</div><div class="about-card-value">Felidhoo, Vaavu Atoll, Maldives</div></div>
+  </div>
+</section>
+
+<div class="divider"><div class="divider-line"></div><div class="divider-floral"><span class="divider-petal">🌸</span><span class="divider-petal" style="animation-delay:0.5s;font-size:12px;">✿</span><span class="divider-petal" style="animation-delay:1s;">🌸</span></div><div class="divider-line"></div></div>
+
+<!-- SHOP -->
+<section class="section fade-up" style="position:relative;">
+  <div class="section-deco" style="right:20px;top:30px;">
+    <svg width="160" height="160" viewBox="0 0 160 160" fill="none">
+      <g opacity="1">
+        <ellipse cx="80" cy="22" rx="14" ry="28" fill="#fde68a"/>
+        <ellipse cx="80" cy="22" rx="14" ry="28" fill="#fde68a" transform="rotate(60 80 80)"/>
+        <ellipse cx="80" cy="22" rx="14" ry="28" fill="#fbbf24" transform="rotate(120 80 80)"/>
+        <ellipse cx="80" cy="22" rx="14" ry="28" fill="#fde68a" transform="rotate(180 80 80)"/>
+        <ellipse cx="80" cy="22" rx="14" ry="28" fill="#fbbf24" transform="rotate(240 80 80)"/>
+        <ellipse cx="80" cy="22" rx="14" ry="28" fill="#fde68a" transform="rotate(300 80 80)"/>
+        <circle cx="80" cy="80" r="20" fill="#92400e" opacity="0.5"/>
+        <circle cx="80" cy="80" r="12" fill="#78350f" opacity="0.4"/>
+      </g>
+    </svg>
+  </div>
+  <p class="section-label">maison de fleur</p>
+  <h2 class="section-heading">The <em>flower shop</em></h2>
+  <p class="shop-intro">Each piece is hand-twisted with love using chenille pipe cleaners — soft, tactile, and truly everlasting. No watering needed, no wilting ever. Perfect as gifts, décor, or a little treat for yourself 🌸</p>
+
+  <div class="flower-grid">
+    <div class="flower-card" data-theme="sunflower" onclick="applyTheme('sunflower',this);spawnSparkles(event)">
+      <div class="flower-img-wrap">
+        <img src="sunflower.jpg" alt="Pipe cleaner sunflowers">
+        <div class="flower-overlay"><span class="flower-overlay-text">view piece</span></div>
+      </div>
+      <div class="flower-info">
+        <div class="flower-name">Sunflower Duo</div>
+        <div class="flower-desc">Golden sunflowers on wire stems — sunshine you can keep forever</div>
+        <span class="flower-tag">bestseller</span>
+      </div>
+    </div>
+    <div class="flower-card" data-theme="pink" onclick="applyTheme('pink',this);spawnSparkles(event)">
+      <div class="flower-img-wrap">
+        <img src="pink.jpg" alt="Pink lily bouquet">
+        <div class="flower-overlay"><span class="flower-overlay-text">view piece</span></div>
+      </div>
+      <div class="flower-info">
+        <div class="flower-name">Pink Lily Bouquet</div>
+        <div class="flower-desc">Lush pink lilies wrapped in dreamy white organza & pearl trim</div>
+        <span class="flower-tag">bouquet</span>
+      </div>
+    </div>
+    <div class="flower-card" data-theme="blue" onclick="applyTheme('blue',this);spawnSparkles(event)">
+      <div class="flower-img-wrap">
+        <img src="blue.jpg" alt="Blue flower bouquet">
+        <div class="flower-overlay"><span class="flower-overlay-text">view piece</span></div>
+      </div>
+      <div class="flower-info">
+        <div class="flower-name">Ocean Blue Mix</div>
+        <div class="flower-desc">Blue lily, hyacinth & tulips — a rare cool-toned bouquet</div>
+        <span class="flower-tag">limited</span>
+      </div>
+    </div>
+    <div class="flower-card" data-theme="purple" onclick="applyTheme('purple',this);spawnSparkles(event)">
+      <div class="flower-img-wrap">
+        <img src="purple.jpg" alt="Purple flower bouquet">
+        <div class="flower-overlay"><span class="flower-overlay-text">view piece</span></div>
+      </div>
+      <div class="flower-info">
+        <div class="flower-name">Lavender Dream</div>
+        <div class="flower-desc">Violets, daisies & curled green vines — soft & whimsical</div>
+        <span class="flower-tag">popular</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flower-card-wide" data-theme="orange" onclick="applyTheme('orange',this);spawnSparkles(event)">
+    <div class="flower-img-wrap">
+      <img src="orange.jpg" alt="Orange gerbera bouquet">
+      <div class="flower-overlay"><span class="flower-overlay-text">view piece</span></div>
+    </div>
+    <div class="flower-info" style="padding:24px 26px;">
+      <div class="flower-name" style="font-size:21px;">Autumn Gerbera Bouquet</div>
+      <div class="flower-desc" style="margin-bottom:8px;">Warm orange gerberas & white daisies in vintage newspaper wrap — a cozy, editorial feel</div>
+      <span class="flower-tag">statement piece</span>
+    </div>
+  </div>
+
+  <a class="shop-cta" href="https://www.instagram.com/maisondefleur.mv" target="_blank">
+    <div class="shop-cta-blooms">🌸🌺🌼</div>
+    <div style="position:relative;z-index:2;">
+      <div class="shop-cta-sub">order yours today</div>
+      <div class="shop-cta-title">Maison de Fleur 🌸</div>
+    </div>
+    <span class="shop-btn">Shop now ↗</span>
+  </a>
+</section>
+
+<div class="divider"><div class="divider-line"></div><div class="divider-floral"><span class="divider-petal" style="animation-delay:0.3s;">✿</span><span class="divider-petal" style="animation-delay:0.8s;font-size:18px;">🌺</span><span class="divider-petal" style="animation-delay:1.2s;">✿</span></div><div class="divider-line"></div></div>
+
+<!-- CONTACT -->
+<section class="section fade-up">
+  <p class="section-label">say hello</p>
+  <h2 class="section-heading">Let's <em>connect</em></h2>
+  <p class="section-body">Whether it's a custom bouquet order, a collab, or just a friendly hello — I'd love to hear from you ✨</p>
+  <div class="contact-row">
+    <a class="contact-card" href="https://www.instagram.com/mxshyer" target="_blank">
+      <div class="contact-card-icon">📷</div>
+      <div class="contact-card-title">Personal Instagram</div>
+      <div class="contact-card-handle">@mxshyer</div>
+    </a>
+    <a class="contact-card" href="https://www.instagram.com/maisondefleur.mv" target="_blank">
+      <div class="contact-card-icon">🌸</div>
+      <div class="contact-card-title">Business Page</div>
+      <div class="contact-card-handle">@maisondefleur.mv</div>
+    </a>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-blooms">
+    <span class="footer-bloom" style="animation-duration:2.5s;">🌸</span>
+    <span class="footer-bloom" style="animation-duration:3.2s;animation-delay:0.4s;">🌼</span>
+    <span class="footer-bloom" style="animation-duration:2.8s;animation-delay:0.8s;">🌺</span>
+    <span class="footer-bloom" style="animation-duration:3.5s;animation-delay:0.2s;">🌸</span>
+    <span class="footer-bloom" style="animation-duration:2.6s;animation-delay:1s;">✿</span>
+    <span class="footer-bloom" style="animation-duration:3s;animation-delay:0.6s;">🌼</span>
+    <span class="footer-bloom" style="animation-duration:2.9s;animation-delay:1.2s;">🌸</span>
+  </div>
+  <p>✦ &nbsp; mxshyer &nbsp;·&nbsp; maison de fleur &nbsp;·&nbsp; felidhoo, maldives &nbsp; ✦</p>
+  <p style="margin-top:8px;font-size:10px;opacity:0.7;">handcrafted with love · The garden where flowers never die </p>
+</footer>
+
+<script>
+/* ── themes ── */
+const themes = {
+  default:{bg:'#fdf8fc',blob1:'#f5c8e8',blob2:'#ccc8f8',blob3:'#fde8c4',accent:'#b85c8a',heroBg:'linear-gradient(160deg,#fdf6f0 0%,#fce8f3 40%,#e8f0fd 100%)',petalColors:['#f9a8d4','#c4b5fd','#fdba74','#86efac','#7dd3fc','#f0abfc'],label:'✦ default',flash:'rgba(245,200,232,0.18)',tagBg:'linear-gradient(135deg,#fce4f3,#ede4fc)',tagColor:'#8a45a0',marqueeColor:'#c084a8',dotColor:'#d4b0d8',eyebrowColor:'#c084a8'},
+  sunflower:{bg:'#fffdf0',blob1:'#fef3c7',blob2:'#fde68a',blob3:'#fef9e4',accent:'#d97706',heroBg:'linear-gradient(160deg,#fffdf0 0%,#fef9c3 45%,#fefce8 100%)',petalColors:['#fde68a','#fcd34d','#fbbf24','#fef3c7','#fef08a','#fffbeb'],label:'🌻 sunflower duo',flash:'rgba(253,230,138,0.22)',tagBg:'linear-gradient(135deg,#fef9c3,#fde68a)',tagColor:'#92400e',marqueeColor:'#d97706',dotColor:'#fbbf24',eyebrowColor:'#b45309'},
+  pink:{bg:'#fff8fb',blob1:'#fce7f3',blob2:'#fbcfe8',blob3:'#fdf2f8',accent:'#db2777',heroBg:'linear-gradient(160deg,#fff8fb 0%,#fce7f3 45%,#fdf2f8 100%)',petalColors:['#fbcfe8','#f9a8d4','#f472b6','#fce7f3','#fdf2f8','#fecdd3'],label:'🌸 pink lily bouquet',flash:'rgba(249,168,212,0.2)',tagBg:'linear-gradient(135deg,#fce7f3,#fbcfe8)',tagColor:'#9d174d',marqueeColor:'#db2777',dotColor:'#f9a8d4',eyebrowColor:'#be185d'},
+  blue:{bg:'#f5fbff',blob1:'#bfdbfe',blob2:'#dbeafe',blob3:'#e0f2fe',accent:'#2563eb',heroBg:'linear-gradient(160deg,#f0f9ff 0%,#dbeafe 45%,#eff6ff 100%)',petalColors:['#bfdbfe','#93c5fd','#7dd3fc','#bae6fd','#e0f2fe','#dbeafe'],label:'🌊 ocean blue mix',flash:'rgba(147,197,253,0.22)',tagBg:'linear-gradient(135deg,#dbeafe,#bfdbfe)',tagColor:'#1e40af',marqueeColor:'#3b82f6',dotColor:'#93c5fd',eyebrowColor:'#1d4ed8'},
+  purple:{bg:'#faf8ff',blob1:'#ede9fe',blob2:'#ddd6fe',blob3:'#f3e8ff',accent:'#7c3aed',heroBg:'linear-gradient(160deg,#faf8ff 0%,#ede9fe 45%,#f5f3ff 100%)',petalColors:['#ddd6fe','#c4b5fd','#a78bfa','#ede9fe','#f3e8ff','#e9d5ff'],label:'💜 lavender dream',flash:'rgba(196,181,253,0.22)',tagBg:'linear-gradient(135deg,#f3e8ff,#ede9fe)',tagColor:'#5b21b6',marqueeColor:'#7c3aed',dotColor:'#a78bfa',eyebrowColor:'#6d28d9'},
+  orange:{bg:'#fffaf5',blob1:'#fed7aa',blob2:'#fdba74',blob3:'#fff7ed',accent:'#ea580c',heroBg:'linear-gradient(160deg,#fffaf5 0%,#ffedd5 45%,#fff7ed 100%)',petalColors:['#fed7aa','#fdba74','#fb923c','#ffedd5','#fff7ed','#fecaca'],label:'🍊 autumn gerbera',flash:'rgba(253,186,116,0.22)',tagBg:'linear-gradient(135deg,#ffedd5,#fed7aa)',tagColor:'#9a3412',marqueeColor:'#ea580c',dotColor:'#fb923c',eyebrowColor:'#c2410c'}
+};
+
+let currentTheme = 'default';
+let badgeTimer = null;
+
+function applyTheme(name, clickedCard) {
+  if(currentTheme === name){ name='default'; clickedCard=null; }
+  const t = themes[name]; currentTheme = name;
+  document.body.style.backgroundColor = t.bg;
+  document.getElementById('blob1').style.background = t.blob1;
+  document.getElementById('blob2').style.background = t.blob2;
+  document.getElementById('blob3').style.background = t.blob3;
+  document.getElementById('heroBg').style.background = t.heroBg;
+  document.querySelectorAll('.hero-name em,.section-heading em').forEach(el=>el.style.color=t.accent);
+  document.querySelectorAll('.section-label,.divider-icon').forEach(el=>el.style.color=t.eyebrowColor);
+  document.querySelector('.hero-eyebrow').style.color=t.eyebrowColor;
+  document.querySelectorAll('.marquee-item').forEach(el=>el.style.color=t.marqueeColor);
+  document.querySelectorAll('.marquee-dot').forEach(el=>el.style.background=t.dotColor);
+  document.querySelectorAll('.petal').forEach(p=>{p.style.background=t.petalColors[Math.floor(Math.random()*t.petalColors.length)];});
+  document.querySelectorAll('.flower-tag').forEach(el=>{el.style.background=t.tagBg;el.style.color=t.tagColor;});
+  document.querySelectorAll('.flower-card,.flower-card-wide').forEach(el=>el.classList.remove('active-theme'));
+  if(clickedCard) clickedCard.classList.add('active-theme');
+  const flash=document.getElementById('themeFlash');
+  flash.style.background=t.flash; flash.classList.add('active');
+  setTimeout(()=>flash.classList.remove('active'),500);
+  const badge=document.getElementById('themeBadge');
+  badge.textContent=t.label; badge.classList.add('show');
+  if(badgeTimer) clearTimeout(badgeTimer);
+  badgeTimer=setTimeout(()=>badge.classList.remove('show'),2200);
+  // update canvas petal colors
+  activePetalColors = t.petalColors;
+}
+
+/* ── marquee ── */
+const words=['pipe cleaner flowers','maison de fleur','vaavu atoll','handmade bouquets','psychology student','felidhoo','everlasting florals','mxshyer','custom orders','pipe cleaner flowers','maison de fleur','vaavu atoll','handmade bouquets','psychology student','felidhoo','everlasting florals','mxshyer','custom orders'];
+const track=document.getElementById('mtrack');
+words.forEach((w,i)=>{
+  const el=document.createElement('div'); el.className='marquee-item';
+  const useFlower = i%4===0;
+  el.innerHTML=`<span class="marquee-dot"></span>${useFlower?'<span class="marquee-flower">✿</span>&nbsp;':''}${w}`;
+  track.appendChild(el);
+});
+
+/* ── hero petals (DOM) ── */
+const defaultColors=themes.default.petalColors;
+const pc=document.getElementById('petals');
+for(let i=0;i<22;i++){
+  const p=document.createElement('div'); p.className='petal';
+  const s=8+Math.random()*14;
+  p.style.cssText=`width:${s}px;height:${s}px;background:${defaultColors[Math.floor(Math.random()*defaultColors.length)]};left:${Math.random()*100}%;bottom:${-10+Math.random()*30}px;animation-duration:${6+Math.random()*9}s;animation-delay:${Math.random()*9}s;`;
+  pc.appendChild(p);
+}
+
+/* ── canvas falling petals ── */
+const canvas=document.getElementById('petalCanvas');
+const ctx=canvas.getContext('2d');
+let W,H,petals=[];
+let activePetalColors=themes.default.petalColors;
+
+function resizeCanvas(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+resizeCanvas();
+window.addEventListener('resize',resizeCanvas);
+
+function randomPetalColor(){ return activePetalColors[Math.floor(Math.random()*activePetalColors.length)]; }
+
+function createPetal(){
+  return{
+    x:Math.random()*W, y:-20,
+    size:5+Math.random()*9,
+    speedY:0.6+Math.random()*1.1,
+    speedX:(Math.random()-0.5)*0.7,
+    rotation:Math.random()*Math.PI*2,
+    rotSpeed:(Math.random()-0.5)*0.04,
+    opacity:0.4+Math.random()*0.45,
+    color:randomPetalColor(),
+    shape:Math.floor(Math.random()*3) // 0=ellipse,1=heart-ish,2=rounded
+  };
+}
+
+// start with 30 petals spread across screen
+for(let i=0;i<30;i++){
+  const p=createPetal();
+  p.y=Math.random()*H;
+  petals.push(p);
+}
+
+function drawPetal(p){
+  ctx.save();
+  ctx.globalAlpha=p.opacity;
+  ctx.translate(p.x,p.y);
+  ctx.rotate(p.rotation);
+  ctx.fillStyle=p.color;
+  if(p.shape===0){
+    ctx.beginPath();
+    ctx.ellipse(0,0,p.size*0.55,p.size,0,0,Math.PI*2);
+    ctx.fill();
+  } else if(p.shape===1){
+    ctx.beginPath();
+    ctx.moveTo(0,-p.size*0.9);
+    ctx.bezierCurveTo(p.size*0.8,-p.size*0.9,p.size*0.9,p.size*0.2,0,p.size);
+    ctx.bezierCurveTo(-p.size*0.9,p.size*0.2,-p.size*0.8,-p.size*0.9,0,-p.size*0.9);
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.roundRect(-p.size*0.45,-p.size,p.size*0.9,p.size*2,p.size*0.4);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function animateCanvas(){
+  ctx.clearRect(0,0,W,H);
+  // spawn new petal occasionally
+  if(Math.random()<0.018 && petals.length<55) petals.push(createPetal());
+  petals.forEach(p=>{
+    p.y+=p.speedY;
+    p.x+=p.speedX+Math.sin(p.y*0.015)*0.4;
+    p.rotation+=p.rotSpeed;
+    if(p.y>H+20) Object.assign(p,createPetal(),{y:-20,color:randomPetalColor()});
+    drawPetal(p);
+  });
+  requestAnimationFrame(animateCanvas);
+}
+animateCanvas();
+
+/* ── sparkles on click ── */
+const sparkleEmojis=['🌸','✿','🌺','🌼','✨','💫','🌻'];
+function spawnSparkles(e){
+  const rect=e.currentTarget.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  for(let i=0;i<7;i++){
+    const el=document.createElement('div'); el.className='sparkle';
+    const angle=(i/7)*Math.PI*2;
+    const dist=40+Math.random()*30;
+    el.style.cssText=`left:${cx+Math.cos(angle)*dist-12}px;top:${cy+Math.sin(angle)*dist-12}px;`;
+    el.textContent=sparkleEmojis[i%sparkleEmojis.length];
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1000);
+  }
+}
+
+/* ── botanical side decorations (fixed) ── */
+const botLayer=document.getElementById('botanicalLayer');
+// left side vine
+botLayer.innerHTML+=`<svg style="left:-10px;top:30%;width:80px;height:300px;" viewBox="0 0 80 300" fill="none"><path d="M60 0 Q20 50 50 100 Q80 150 30 200 Q0 250 40 300" stroke="rgba(196,160,210,0.3)" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="48" cy="95" rx="10" ry="5" fill="rgba(160,210,150,0.35)" transform="rotate(-30 48 95)"/><ellipse cx="32" cy="195" rx="9" ry="4.5" fill="rgba(160,210,150,0.3)" transform="rotate(20 32 195)"/><circle cx="52" cy="100" r="4" fill="rgba(249,168,212,0.4)"/><circle cx="38" cy="200" r="3.5" fill="rgba(196,181,253,0.4)"/></svg>`;
+// right side vine
+botLayer.innerHTML+=`<svg style="right:-10px;top:40%;width:80px;height:300px;" viewBox="0 0 80 300" fill="none"><path d="M20 0 Q60 50 30 100 Q0 150 50 200 Q80 250 40 300" stroke="rgba(196,160,210,0.3)" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="32" cy="95" rx="10" ry="5" fill="rgba(160,210,150,0.35)" transform="rotate(30 32 95)"/><ellipse cx="48" cy="195" rx="9" ry="4.5" fill="rgba(160,210,150,0.3)" transform="rotate(-20 48 195)"/><circle cx="28" cy="100" r="4" fill="rgba(253,186,116,0.4)"/><circle cx="42" cy="200" r="3.5" fill="rgba(249,168,212,0.4)"/></svg>`;
+
+/* ── fade up on scroll ── */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+},{threshold:0.1});
+document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+setTimeout(()=>document.querySelectorAll('.fade-up').forEach(el=>el.classList.add('visible')),120);
+</script>
+</body>
+</html>
